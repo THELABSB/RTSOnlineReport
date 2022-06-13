@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import ReturntoSport
 import athletereport
-import survey
 from PIL import Image
 st.set_page_config(page_title='Return To Sport - Dr. Finer DPT', page_icon=':anger:', layout="wide", initial_sidebar_state="auto", menu_items=None)
 

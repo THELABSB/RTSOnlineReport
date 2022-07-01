@@ -6,22 +6,30 @@ import plotly
 import streamlit as st
 from PIL import Image
 
+st.set_page_config(page_title='Return to Sport - The LAB', page_icon=':anger:', layout="wide", initial_sidebar_state="auto", menu_items=None)
 
 
-def app():
-    df=pd.read_csv('returntosport.csv', encoding='UTF-8', header =(0))
-    name=st.selectbox('Athlete Name', df['Name'])
+df=pd.read_csv('returntosport.csv', encoding='UTF-8', header =(0))
+
+accesskey= False
+
+if accesskey is False:
+    logincreds=st.text_input('Enter Access Key')
+
+if (logincreds in df['Access_Key'].unique()) is True:
+    client= df[ df['Access_Key'] == logincreds]
+    accesskey= True
+    
+if accesskey is True:
     nodalman= Image.open('nodalman.jpeg')
 
-    client = df[ df['Name']== name]
-    
     if client['InjSide'].iloc[0] == 'L':
         lknee= 'red'
         rknee= 'gray'
     elif client['InjSide'].iloc[0] == 'R':
         lknee = 'gray'
         rknee= 'red'
-    
+
     #region Nodal Man Layout
     fig = plotly.graph_objects.Figure(data=[plotly.graph_objects.Scatter(
     x=[2.5, 3.6], y=[10, 10],
@@ -51,12 +59,12 @@ def app():
             opacity=1,
             layer="below")
     )
-    
+
     #endregion
-    
+
     #region Isometric Strength
     x = ['Quads', 'Hamstring']
-    
+
     plot = plotly.graph_objects.Figure(data=[plotly.graph_objects.Bar(
         name = 'Left',
         y = x,
@@ -70,10 +78,10 @@ def app():
     ])
     plot.update_layout(autosize=False, height=300,width=550, title_text='Isometric Strength (N)')
     #endregion
-    
+
     #region Distance Hops
     mecs = ['SL-Hop', 'Triple-Hop', 'Crossover-Hop', 'Timed Hop(ms)']
-    
+
     mechplot = plotly.graph_objects.Figure(data=[plotly.graph_objects.Bar(
         name = 'Left',
         x = mecs,
@@ -87,7 +95,7 @@ def app():
     ])
     mechplot.update_layout(autosize=False, height=400,width=550, title_text='Hop Distance (in), Time (ms)')
     #endregion
-    
+
     if client['QuadRIso'].iloc[0] >= client['QuadLIso'].iloc[0]:
         quadisoasym= round((1- (client['QuadLIso'].iloc[0] / client['QuadRIso'].iloc[0]))*100,2)
         
@@ -119,24 +127,24 @@ def app():
         timehopasym= round((1- (client['TimeHopLAvg'].iloc[0] / client['TimeHopRAvg'].iloc[0]))*100,2)
     elif client['TimeHopLAvg'].iloc[0] > client['TimeHopRAvg'].iloc[0]:
         timehopasym= round((1- (client['TimeHopRAvg'].iloc[0] / client['TimeHopLAvg'].iloc[0]))*100,2)
-    
+
     if quadisoasym >=10 or hamisoasym >=10 or slhopasym>=10 or trihopasym >=10 or xhopasym >=10 or timehopasym >=10 or client['aclrts_score'].iloc[0] <64 or client['ikdc_score'].iloc[0] <84:
         result = 'High-Risk'
     else:
         result= 'Low-Risk'
-    
+
     st.title('Return To Sport Report')
     st.write('__Presented by THE LAB__')
-    st.header(name)
+    st.header(client['Name'].to_string(index= False))
 
     col1, col2, col3 =st.columns([1,0.5,1])
     col1.markdown('**Date of Assessment:** ' + client['Date'].to_string(index= False))
     col2.markdown('**Sex:**  '+ client['Sex'].to_string(index= False))
-    
-    
+
+
     st.write('___')
-    
-    
+
+
     st.header('Assessment Summary')
     st.subheader('**Verdict**:  ' + result)
     if result == 'High-Risk':
@@ -145,7 +153,7 @@ def app():
         st.success('Based on the results for ' + client['Name'].to_string(index= False) + ' satisfy the requirements to safely return to sport.')
     st.title(' ')    
     st.markdown('___')
-    
+
     col1, col2, col3 =st.columns([0.8,1,2])
 
     col1.subheader('Primary Activity:')
@@ -153,8 +161,8 @@ def app():
     col1.markdown('**Secondary Activity:**  '+ client['Secondary_Activity'].to_string(index= False))
     col1.markdown('**Dominant Side:** ' + client['LimbDom'].to_string(index= False))
     col1.markdown('**Date of Injury:** '+ client['Injdate'].to_string(index= False))
-    
-    
+
+
     col1.subheader('**Injury Side:** ')
 
     col2.title(' ')
@@ -167,7 +175,7 @@ def app():
     col2.subheader(client['InjType'].to_string(index= False))
     col1.subheader('**Injury Specs:**'  )
     col2.subheader(client['InjSpecs'].to_string(index= False))
-    
+
     col1.title(' ')
     col1.markdown('**Mobility**')
     col1.markdown('Ankle Mobility [cm/deg] (10+/36°+): ')
@@ -178,16 +186,16 @@ def app():
     col2.markdown(client['Ankle_L_cm'].to_string(index= False)+'/'+client['Ankle_L_deg'].to_string(index= False)+' | '+ client['Ankle_R_cm'].to_string(index= False)+'/'+client['Ankle_R_deg'].to_string(index= False))
     col2.markdown(client['Hip_L_In'].to_string(index= False) + ' | ' + client['Hip_R_In'].to_string(index= False))
     col2.markdown(client['Hip_L_Ex'].to_string(index= False) + ' | ' + client['Hip_R_Ex'].to_string(index= False))
-    
-    col3.plotly_chart(fig)
-    
 
-    
+    col3.plotly_chart(fig)
+
+
+
     st.write('___')
     st.subheader('Results')
-    
+
     col1, col2, col3 =st.columns([2,0.5,2])
-    
+
     col1.plotly_chart(plot)
     col1.plotly_chart(mechplot)
     col2.write('  ')
@@ -217,7 +225,7 @@ def app():
     col3.write('  ')
     col3.write('Isometric strength is your ability to generate force with no changes in displacement with respect to your leg. The results of the isometric strength test will show the asymmetrical differences between your non-injured and injured leg.')
     col3.write('The isometric strength of the quadriceps is evaulated through knee extension intent, similar to a kicking motion. The isometric strength of the hamstrings is evaulated through knee flexion, a tuck or curling motion of your heel towards your butt.')
-    
+
     if quadisoasym >= 10:
         col3.warning('**Verdict: High-Risk**')
         col3.write('There presents a significant asymmetry in isometric strength in the quadriceps (knee extension). This asymmetry is an indicator of injury risk. It is best advised to continue rehabilitation and strengthening of the knee.')
@@ -248,26 +256,26 @@ def app():
     st.write('___')
     st.subheader('ACLr Return to Play and IKDC Subjective Knee Evaulation')
     st.title('  ')
-    
+
     col1,col2=st.columns([0.2,1])
-    
+
     col2.markdown('**ACL Return to Sport Evaluation Score (64):**   '+ round(client['aclrts_score'],2).to_string(index= False))
     col2.markdown('**International Knee Documentation Committee (IKDC) Subjective Knee Evaluation (84):**    '+ round(client['ikdc_score'],2).to_string(index= False))
-    
+
     if client['aclrts_score'].iloc[0] < 64 or client['ikdc_score'].iloc[0] < 84:
         st.markdown(client['Name'].to_string(index= False) + ' did not meet the pyschological criteria to return to sport. Psychologically unprepared athletes can face an increase in re-injury rate.')
     elif client['aclrts_score'].iloc[0] >= 64 or client['ikdc_score'].iloc[0] >= 84:
         st.markdown(client['Name'].to_string(index= False) + ' has meet the pyschological criteria to return to sport.')
     col2.markdown('')
-    
+
     st.markdown('___')
     st.subheader('Evaluation Breakdown')
     col1,col2= st.columns([1,1])
 
     col1.markdown('**ACL-RSI**: ' + client['aclrts_score'].to_string(index= False))
     col1.markdown('**IKDC**: ' + round(client['ikdc_score'],2).to_string(index= False))
-    
-    
+
+
     if quadisoasym <10:
         col1.markdown('**Quadiceps (Knee Extension) Isometric**:  Low-Risk')
     elif quadisoasym >=10:
@@ -292,9 +300,9 @@ def app():
         col2.markdown('**Timed Hop**:  Low-Risk')
     elif timehopasym >=10:
         col2.markdown('**Timed Hop**:  High-Risk')
-    
+
     if pd.isna(client['Notes'].iloc[0]) is False:
         st.write(client['Notes'])
-    
-    
+
+
     st.write('___')
